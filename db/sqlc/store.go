@@ -8,21 +8,27 @@ import (
 )
 
 // Store provides all function to execute db queries and transactions
-type Store struct {
+type Store interface {
+	Querier
+	TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error)
+}
+
+// SQLStore provides all function to execute sql queries and transactions
+type SQLStore struct {
 	*Queries
 	db *pgxpool.Pool
 }
 
 // NewStore creates a new Store
-func NewStore(db *pgxpool.Pool) *Store {
-	return &Store{
+func NewStore(db *pgxpool.Pool) Store {
+	return &SQLStore{
 		db:      db,
 		Queries: New(db),
 	}
 }
 
 // execTx executes a function withthin a database transaction
-func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
+func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
 	tx, err := store.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -50,16 +56,16 @@ type TransferTxParams struct {
 
 // TransferTxResult is the result of the transfer transaction
 type TransferTxResult struct {
-	Transfer    Transfers `json:"transfers"`
-	FromAccount Accounts  `json:"from_account"`
-	ToAccount   Accounts  `json:"to_account"`
-	FromEntry   Entries   `json:"from_entry"`
-	ToEntry     Entries   `json:"To_entry"`
+	Transfer    Transfer `json:"transfers"`
+	FromAccount Account  `json:"from_account"`
+	ToAccount   Account  `json:"to_account"`
+	FromEntry   Entry    `json:"from_entry"`
+	ToEntry     Entry    `json:"To_entry"`
 }
 
 // TransferTx performs a money transfer from one account to the other.
 // It creates the transfer, add account entries, and update accounts' balance within a database transaction
-func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
+func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 
 	store.execTx(ctx, func(q *Queries) error {
@@ -95,7 +101,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		} else {
 			result.ToAccount, result.FromAccount, err = addMoney(ctx, q, arg.ToAccountID, arg.Amount, arg.FromAccountID, -arg.Amount)
 		}
-			
+
 		return nil
 	})
 
@@ -109,7 +115,7 @@ func addMoney(
 	amount1 int64,
 	accountID2 int64,
 	amount2 int64,
-) (acount1, acount2 Accounts, err error) {
+) (acount1, acount2 Account, err error) {
 	acount1, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
 		ID:     accountID1,
 		Amount: amount1,
