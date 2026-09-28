@@ -9,10 +9,12 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/require"
 )
-
+ 
 func createRandomAccount(t *testing.T) Account {
+	user := createRandomUser(t)
+
 	arg := CreateAccountParams{
-		Owner:    util.RondomOwner(),
+		Owner:    user.Username,
 		Balance:  util.RondomMoney(),
 		Currency: util.RandomCurrency(),
 	}
