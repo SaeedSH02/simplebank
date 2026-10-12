@@ -32,7 +32,7 @@ func TestPasetoMaker(t *testing.T) {
 	require.WithinDuration(t, expiredAt, payload.ExpiredAt, time.Second)
 }
 
-func TestExpiredPasetoToken(t *testing.T) {
+func TestExpiredPasetoToken(t *testing.T) { 
 	maker, err := NewPasetoMaker(util.RandomString(32))
 	require.NoError(t, err)
 
