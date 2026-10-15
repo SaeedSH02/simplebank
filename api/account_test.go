@@ -69,16 +69,14 @@ func TestGetAccountAPI(t *testing.T) {
 			name:      "NoAuthorization",
 			accountID: account.ID,
 			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, "UnauthorizedUSer", time.Minute)
+				// Do not add an Authorization header.
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				// build stubs
 				store.EXPECT().
-					GetAccount(gomock.Any(), gomock.Any()).Times(0)
-
+					GetAccount(gomock.Any(), gomock.Any()).
+					Times(0)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				// check response
 				require.Equal(t, http.StatusUnauthorized, recorder.Code)
 			},
 		},
