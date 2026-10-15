@@ -33,6 +33,17 @@ jobs:
 
     
     steps:
+    - name: Wait for PostgreSQL
+      run: |
+        for i in {1..30}; do
+          if pg_isready -h 127.0.0.1 -p 5432 -U root; then
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "PostgreSQL did not become ready"
+        exit 1
+
     - name: Checkout code into the Go module directory
       uses: actions/checkout@v4
 
